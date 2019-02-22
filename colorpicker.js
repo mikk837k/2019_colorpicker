@@ -1,13 +1,9 @@
 "use strict";
 
-let ctx = document.querySelector("#imageCanvas").getContext("2d");
-let ctxZoom = document.querySelector("#zoomCanvas").getContext("2d");
+const ctx = document.querySelector("#imageCanvas").getContext("2d");
+const ctxZoom = document.querySelector("#zoomCanvas").getContext("2d");
 let imageCanvas = document.querySelector("#imageCanvas");
-let imgData;
-let zoomData;
-let pixelIndex;
-let x;
-let y;
+let imgData, zoomData, pixelIndex, x, y;
 
 window.addEventListener("DOMContentLoaded", init);
 
@@ -17,15 +13,13 @@ window.addEventListener("DOMContentLoaded", init);
 
 function init() {
   let img = new Image();
-  img.src = "cat.jpg";
 
   img.addEventListener("load", () => {
     ctx.drawImage(img, 0, 0);
     readImageData();
     readZoomData();
-
-    drawZoomDataToZoomCanvas();
   });
+  img.src = "cat.jpg";
 
   imageCanvas.addEventListener("mousemove", mouseMoved);
 }
@@ -35,16 +29,14 @@ function mouseMoved(evt) {
   x = evt.offsetX;
   y = evt.offsetY;
 
-  //   console.log(`Mouse x-axis: ${x} y-axis: ${y}`);
-
   ctx.putImageData(imgData, 0, 0);
   ctxZoom.putImageData(zoomData, 0, 0);
 
-  let rgb = getColorInfo(x, y);
-
-  showColorInfo(rgb);
-
+  let rgba = getColorInfo(x, y);
+  showColorInfo(rgba);
   drawRectangle(x, y);
+  copyPixelsToZoomData(x, y);
+  drawZoomDataToZoomCanvas();
 }
 
 function drawRectangle(x, y) {
@@ -52,7 +44,7 @@ function drawRectangle(x, y) {
     color: "green",
     draw: function() {
       ctx.beginPath();
-      ctx.rect(x, y, 10, 10);
+      ctx.rect(x - 5, y - 5, 10, 10);
       ctx.closePath();
       ctx.strokeStyle = this.color;
       ctx.stroke();
@@ -71,14 +63,37 @@ function readImageData() {
 function readZoomData() {
   const w = 10;
   const h = 10;
+
   zoomData = ctxZoom.getImageData(x, y, w, h);
 
   console.log(zoomData);
 }
 
-function copyPixelsFromimageDatatoZoomData() {}
 function drawZoomDataToZoomCanvas() {
+  ctxZoom.putImageData(zoomData, 0, 0);
   console.log(ctxZoom);
+}
+
+function copyPixelsToZoomData(offsetX, offsetY) {
+  console.log("copyPixelsToZoomData");
+
+  let w = ctxZoom.canvas.width;
+  const imageWidth = ctx.canvas.width;
+
+  for (let y = 0; y <= 10; y++) {
+    for (let x = 0; x <= 10; x++) {
+      let imageY = offsetY + y;
+      let imageX = offsetX + x;
+      let pixelIndex = 4 * (x + y * w);
+      let ImageIndex = 4 * (imageX + imageY * imageWidth);
+
+      zoomData.data[pixelIndex] = imgData.data[ImageIndex];
+      zoomData.data[pixelIndex + 1] = imgData.data[ImageIndex + 1];
+      zoomData.data[pixelIndex + 2] = imgData.data[ImageIndex + 2];
+      zoomData.data[pixelIndex + 3] = imgData.data[ImageIndex + 3];
+      console.log(pixelIndex);
+    }
+  }
 }
 
 function getColorInfo() {
